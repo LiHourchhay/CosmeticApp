@@ -3,13 +3,11 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 
-// public login route
+// Public routes
 router.post('/login', userController.login);
+router.post('/register', userController.registerUser); // Register route
 
-// Create user route without authentication
-router.post('/', userController.createUser);  // No authentication middleware here
-
-// All other routes require a valid JWT token
+// Routes requiring authentication
 router.use(authenticate);
 
 // Admin-only routes for managing users

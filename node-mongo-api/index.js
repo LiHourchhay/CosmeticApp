@@ -5,93 +5,83 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs');
 
-// load .env
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ── MIDDLEWARE ────────────────────────────────────────────────────────────────
-
-// CORS
+// Middleware setup
 app.use(cors({
   origin: '*',
-  methods: ['GET','POST','PUT','DELETE'],
-  allowedHeaders: ['Content-Type','Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// JSON body parsing
 app.use(bodyParser.json());
-
-// HTTP request logging
 app.use(morgan('dev'));
 
-// serve uploads folder
-app.use('/uploads', express.static(path.join(__dirname,'uploads')));
+// Serve uploads folder
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ensure uploads folder exists
-const fs = require('fs');
-const uploadPath = path.join(__dirname,'uploads');
-if(!fs.existsSync(uploadPath)){
-  fs.mkdirSync(uploadPath,{ recursive: true });
+// Ensure uploads folder exists
+const uploadPath = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
   console.log('📁 "uploads" folder created.');
 }
 
-// ── DATABASE ──────────────────────────────────────────────────────────────────
-
-const connectDB = async() => {
-  try{
+// Database connection
+const connectDB = async () => {
+  try {
     const dbURI = process.env.MONGODB_URI;
-    if(!dbURI) throw new Error('MongoDB URI missing');
+    if (!dbURI) throw new Error('MongoDB URI missing');
     await mongoose.connect(dbURI);
     console.log('✅ MongoDB connected');
-  }catch(err){
-    console.error('❌ DB Connection Error:',err.message);
-    setTimeout(connectDB,5000);
+  } catch (err) {
+    console.error('❌ DB Connection Error:', err.message);
+    setTimeout(connectDB, 5000);
   }
 };
 
-// ── ROUTES ────────────────────────────────────────────────────────────────────
-
-const roleRoutes       = require('./routes/roleRoutes');
-const userRoutes       = require('./routes/userRoutes');        // includes login, protected CRUD
-const productRoutes    = require('./routes/productRoutes');
+// Routes
+const roleRoutes = require('./routes/roleRoutes');
+const userRoutes = require('./routes/userRoutes');
+const productRoutes = require('./routes/productRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 const apiRouter = express.Router();
 
-// public routes (no auth)
+// Public routes
 apiRouter.use('/role', roleRoutes);
+apiRouter.use('/category', categoryRoutes);
 
-// userRoutes handles:
-//   POST /api/user/login         ← login
-//   then all /api/user/* protected
+// User routes, including registration and login
 apiRouter.use('/user', userRoutes);
 
-// productRoutes can be public or protected inside its own file
+// Product routes
 apiRouter.use('/product', productRoutes);
 
 app.use('/api', apiRouter);
 
-// ── GLOBAL ERROR HANDLER ──────────────────────────────────────────────────────
-
-app.use((err,req,res,next)=>{
-  console.error('❌',err);
-  res.status(err.status||500).json({
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('❌', err);
+  res.status(err.status || 500).json({
     success: false,
-    message: err.message||'Internal Server Error',
-    error: process.env.NODE_ENV==='development'?err.stack:undefined
+    message: err.message || 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 
-// ── STARTUP ───────────────────────────────────────────────────────────────────
-
-process.on('SIGINT',async()=>{
+// Start server
+process.on('SIGINT', async () => {
   console.log('🚨 Shutting down...');
   await mongoose.connection.close();
   process.exit(0);
 });
 
-connectDB().then(()=>{
-  app.listen(port,()=>console.log(`🚀 Listening on http://localhost:${port}`));
+connectDB().then(() => {
+  app.listen(port, () => console.log(`🚀 Listening on http://localhost:${port}`));
 });

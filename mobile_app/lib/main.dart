@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'view/homepage.dart';
 import 'view/login.dart';
+import 'view/register.dart'; // <-- added register import
 import 'view/form/add_product.dart';
 import 'view/form/edit_product.dart';
 import 'services/auth_service.dart';
@@ -30,6 +31,8 @@ class MyApp extends StatelessWidget {
           initialRoute: '/login',
           routes: {
             '/login': (context) => const LoginPage(),
+            '/register': (context) =>
+                const RegisterPage(), // <-- added register route
             '/home': (context) => const HomePage(),
           },
           // Use onGenerateRoute for routes that need arguments (like /edit)
